@@ -31,21 +31,36 @@ def resolve_path(path):
     """Return an existing path, attempting to handle older entries."""
     if os.path.exists(path):
         return path
+
+    candidates = []
+
+    if 'app/graphql/types/' in path:
+        candidates.append(path.replace('app/graphql/types/', ''))
+
     if 'graphql/types/' in path:
-        alt = path.replace('graphql/types/', '')
+        candidates.append(path.replace('graphql/types/', ''))
+
+    if 'app/' in path:
+        candidates.append(path.replace('app/', ''))
+
+    for alt in candidates:
         if os.path.exists(alt):
             return alt
+
     return path
 
 def extract_type_name(path):
     path = resolve_path(path)
     stack = []
+    deepest = []
     try:
         with open(path, 'r') as f:
             for line in f:
                 m = re.match(r'\s*module\s+([A-Za-z0-9_]+)', line)
                 if m:
                     stack.append(m.group(1))
+                    if len(stack) > len(deepest):
+                        deepest = stack.copy()
                     continue
                 m = re.match(r'\s*class\s+([A-Za-z0-9_]+)', line)
                 if m:
@@ -55,6 +70,8 @@ def extract_type_name(path):
                     stack.pop()
     except FileNotFoundError:
         return None
+    if deepest:
+        return '::'.join(deepest)
     return None
 
 def grep_usages(constant, exclude_path):
