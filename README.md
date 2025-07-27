@@ -23,10 +23,19 @@ with Python 3:
 python3 check_auth.py
 ```
 
-The script prints a JSON object describing any occurrences where a field
-returns a type from `noauthtypes.txt` but does not include an
-`authorize:` argument. Each entry lists the file containing the missing
-authorization along with the field name and location.
+To list usages where the `authorize:` argument is **present** on fields
+returning these types, run the script with the `--inverse` option:
+
+```bash
+python3 check_auth.py --inverse
+```
+
+The script prints a JSON object describing occurrences where fields return
+types listed in `noauthtypes.txt`. By default it reports fields that
+lack an `authorize:` argument. When `--inverse` is used, it instead
+reports the locations where such fields **do** include an `authorize:`
+argument. Each entry lists the file containing the type along with the
+field name and location of the usage.
 
 The tool relies on the `grep` command being available in your
 environment.

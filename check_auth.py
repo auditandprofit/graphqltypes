@@ -2,12 +2,25 @@ import os
 import re
 import json
 import subprocess
+import argparse
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
 
 NOAUTH_FILE = os.path.join(ROOT, 'noauthtypes.txt')
 
 TYPES_DIRS = ['types_ce', 'types_ee']
+
+
+def parse_args():
+    parser = argparse.ArgumentParser(
+        description='Check GraphQL fields that return unauthenticated types'
+    )
+    parser.add_argument(
+        '--inverse',
+        action='store_true',
+        help='Output usages where fields include an authorize: argument'
+    )
+    return parser.parse_args()
 
 def resolve_path(path):
     """Return an existing path, attempting to handle older entries."""
@@ -71,6 +84,7 @@ def extract_field_name(line):
 
 
 def main():
+    args = parse_args()
     result = {}
     with open(NOAUTH_FILE) as f:
         for file_path in f:
@@ -95,8 +109,13 @@ def main():
                 field_name = extract_field_name(text)
                 if not field_name:
                     continue
-                if field_has_authorize(other_file, ln):
-                    continue
+                has_auth = field_has_authorize(other_file, ln)
+                if args.inverse:
+                    if not has_auth:
+                        continue
+                else:
+                    if has_auth:
+                        continue
                 other_constant = extract_type_name(other_file)
                 usages.append({
                     'file': os.path.relpath(other_file, ROOT),
