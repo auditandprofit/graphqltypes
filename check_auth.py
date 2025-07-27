@@ -9,7 +9,18 @@ NOAUTH_FILE = os.path.join(ROOT, 'noauthtypes.txt')
 
 TYPES_DIRS = ['types_ce', 'types_ee']
 
+def resolve_path(path):
+    """Return an existing path, attempting to handle older entries."""
+    if os.path.exists(path):
+        return path
+    if 'graphql/types/' in path:
+        alt = path.replace('graphql/types/', '')
+        if os.path.exists(alt):
+            return alt
+    return path
+
 def extract_type_name(path):
+    path = resolve_path(path)
     stack = []
     try:
         with open(path, 'r') as f:
@@ -69,11 +80,13 @@ def main():
             type_file = file_path
             if not os.path.isabs(type_file):
                 type_file = os.path.join(ROOT, type_file)
+            type_file = resolve_path(type_file)
             constant = extract_type_name(type_file)
             if not constant:
                 continue
             usages = []
-            for line in grep_usages(constant, file_path):
+            exclude = os.path.relpath(type_file, ROOT)
+            for line in grep_usages(constant, exclude):
                 match = re.match(r'([^:]+):(\d+):(.*)', line)
                 if not match:
                     continue
