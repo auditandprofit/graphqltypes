@@ -20,6 +20,11 @@ def parse_args():
         action='store_true',
         help='Output usages where fields include an authorize: argument'
     )
+    parser.add_argument(
+        '--count',
+        action='store_true',
+        help='Output only a summary count of auth and no-auth usages'
+    )
     return parser.parse_args()
 
 def resolve_path(path):
@@ -86,11 +91,15 @@ def extract_field_name(line):
 def main():
     args = parse_args()
     result = {}
+    auth_count = 0
+    noauth_count = 0
+    total_types = 0
     with open(NOAUTH_FILE) as f:
         for file_path in f:
             file_path = file_path.strip()
             if not file_path or file_path.startswith('#'):
                 continue
+            total_types += 1
             type_file = file_path
             if not os.path.isabs(type_file):
                 type_file = os.path.join(ROOT, type_file)
@@ -110,6 +119,12 @@ def main():
                 if not field_name:
                     continue
                 has_auth = field_has_authorize(other_file, ln)
+                if args.count:
+                    if has_auth:
+                        auth_count += 1
+                    else:
+                        noauth_count += 1
+                    continue
                 if args.inverse:
                     if not has_auth:
                         continue
@@ -128,7 +143,15 @@ def main():
                     'file': file_path,
                     'usages': usages
                 }
-    print(json.dumps(result, indent=2))
+    if args.count:
+        summary = {
+            'total_types': total_types,
+            'auth_matches': auth_count,
+            'noauth_matches': noauth_count
+        }
+        print(json.dumps(summary, indent=2))
+    else:
+        print(json.dumps(result, indent=2))
 
 if __name__ == '__main__':
     main()

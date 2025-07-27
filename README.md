@@ -30,6 +30,13 @@ returning these types, run the script with the `--inverse` option:
 python3 check_auth.py --inverse
 ```
 
+To output only a summary count of how many field usages include an
+`authorize:` argument versus those that do not, use the `--count` option:
+
+```bash
+python3 check_auth.py --count
+```
+
 The script prints a JSON object describing occurrences where fields return
 types listed in `noauthtypes.txt`. By default it reports fields that
 lack an `authorize:` argument. When `--inverse` is used, it instead
