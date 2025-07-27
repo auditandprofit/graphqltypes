@@ -82,8 +82,6 @@ def grep_usages(constant, exclude_path):
     for line in res.stdout.splitlines():
         if exclude_path in line:
             continue
-        if 'field' not in line:
-            continue
         lines.append(line)
     return lines
 
@@ -103,6 +101,25 @@ def extract_field_name(line):
     if m:
         return m.group(1)
     return None
+
+
+def find_field_usage(path, line_number):
+    """Return (line_number, field_name) for the field call near a constant."""
+    try:
+        with open(path, 'r') as f:
+            lines = f.readlines()
+    except FileNotFoundError:
+        return None, None
+
+    start = max(0, line_number - 3)
+    end = min(len(lines), line_number + 2)
+    for idx in range(start, end):
+        line = lines[idx]
+        if 'field' in line:
+            name = extract_field_name(line)
+            if name:
+                return idx + 1, name
+    return None, None
 
 
 def main():
@@ -132,10 +149,10 @@ def main():
                     continue
                 other_file, ln, text = match.groups()
                 ln = int(ln)
-                field_name = extract_field_name(text)
+                field_ln, field_name = find_field_usage(other_file, ln)
                 if not field_name:
                     continue
-                has_auth = field_has_authorize(other_file, ln)
+                has_auth = field_has_authorize(other_file, field_ln)
                 if args.count:
                     if has_auth:
                         auth_count += 1
@@ -153,7 +170,7 @@ def main():
                     'file': os.path.relpath(other_file, ROOT),
                     'type': other_constant,
                     'field': field_name,
-                    'line': ln
+                    'line': field_ln
                 })
             if usages:
                 result[constant] = {
