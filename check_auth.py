@@ -56,13 +56,13 @@ def extract_type_name(path):
     try:
         with open(path, 'r') as f:
             for line in f:
-                m = re.match(r'\s*module\s+([A-Za-z0-9_]+)', line)
+                m = re.match(r'\s*module\s+([A-Za-z0-9_:]+)', line)
                 if m:
                     stack.append(m.group(1))
                     if len(stack) > len(deepest):
                         deepest = stack.copy()
                     continue
-                m = re.match(r'\s*class\s+([A-Za-z0-9_]+)', line)
+                m = re.match(r'\s*class\s+([A-Za-z0-9_:]+)', line)
                 if m:
                     stack.append(m.group(1))
                     return '::'.join(stack)
